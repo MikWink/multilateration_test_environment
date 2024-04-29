@@ -1,12 +1,14 @@
 import sys
 from PyQt5.QtCore import QUrl
-from PyQt5.QtWidgets import QApplication, QFileDialog, QMainWindow, QGridLayout, QWidget, QLineEdit, QPushButton, QLabel
+from PyQt5.QtWidgets import QApplication, QComboBox, QFileDialog, QMainWindow, QGridLayout, QWidget, QLineEdit, QPushButton, QLabel
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 import json
 from map_generator import Map
 
 input_fields = []
 generated_map = Map()
+bs_labels = []
+ms_labels = []
 
 def on_load_clicked():
     global input_fields
@@ -19,14 +21,10 @@ def on_load_clicked():
         print("i crash heare3")
         with open(file_path, 'r') as json_file:
             data = json.load(json_file)
-            print(data["0"]["1"])
-            print("I crash heare3.5")
             for i, input_field in enumerate(input_fields):
                 i1 = i // 3
                 i2 = i % 3 + 1
                 #temp.append(data[str(i1)][str(i2)])
-                print(type(temp[i1][i2-1]))
-                print(type('asdfasd'))
                 test = temp[i1][i2-1]
                 # Temporary solution
                 input_field.setText(test)
@@ -89,10 +87,9 @@ def on_update_clicked(web):
     for i, input_field in enumerate(input_fields):
         i1 = i // 3
         i2 = i % 3
-        print(i1, i2)
-        print(input_field.text())
         points[i1][i2] = input_field.text()
-        print(points)
+        if i1 < 4 and i2 < 3:
+            bs_labels[i1][i2].setText(input_field.text())
     generated_map.update(points)
     web.reload()
 
@@ -115,8 +112,6 @@ def initUI(web):
         # Add the text inputs for 'x', 'y', 'z'
         for j in range(1, 4):
             input_field = QLineEdit()
-            print(i, j)
-            print(temp)
             input_field.setText(temp[i][j-1])
             layout.addWidget(input_field, j, i * 4 + 1)
             input_fields.append(input_field)  # Keep track of input fields
@@ -131,6 +126,39 @@ def initUI(web):
     layout.addWidget(load_button, 2, 22)
     layout.addWidget(update_button, 3, 22)
 
+    return layout
+
+def initUserInfo(web):
+    layout = QGridLayout()
+    user_info = QLabel("Info:")
+    layout.addWidget(user_info, 0, 0)
+    block_labels = ['BS0:', 'BS1:', 'BS2:', 'BS3:', 'MS:']
+    values = [['5621990', '636646', '0'], ['5616452', '636456', '0'], ['5618652', '640156', '0'], ['5619990', '636346', '200'], ['5618222', '637900', '180']]
+
+
+    for i, block_label in enumerate(block_labels):
+        # Add the block label
+        layout.addWidget(QLabel(block_label), i*4 + 1, 0)
+
+        bs_labels_tmp = []
+        # Add the 'x:', 'y:', 'z:' labels
+        for j in range(1, 4):
+            layout.addWidget(QLabel(f'{chr(120 + j - 1)}:'), i*4 + j + 1, 0)
+            if i < 4:
+                label = QLabel(f'{values[i][j-1]}')
+                bs_labels_tmp.append(label)
+                layout.addWidget(label, i * 4 + j + 1, 1)
+            else:
+                layout.addWidget(QLabel('-'), i * 4 + j + 1, 1)
+        bs_labels.append(bs_labels_tmp)
+    return layout
+
+def initCalculationInput(web):
+    layout = QGridLayout()
+    dropdown = QComboBox()
+    dropdown.addItem("Foy")
+    layout.addWidget(dropdown, 0, 0)
+    layout.addWidget(QPushButton("Calculate"), 1, 0)
 
     return layout
 
@@ -138,28 +166,29 @@ def setupGui():
     # Create a QMainWindow
     window = QMainWindow()
 
-    # Arrays for Input Elements
-    input_lables = []
-    input_fields = []
-
     # Create a QWebEngineView
     web = QWebEngineView()
     web.load(QUrl.fromLocalFile("/terrain_map.html"))
 
+    # Create the user input widget
     user_input = QWidget()
     user_input.setLayout(initUI(web))
-    layout = QGridLayout()
-    layout.addWidget(user_input, 0, 0)
 
+    # Create a user info
+    user_info = QWidget()
+    user_info.setLayout(initUserInfo(web))
+    print(bs_labels)
 
-
+    # Calculation input
+    calculation_input = QWidget()
+    calculation_input.setLayout(initCalculationInput(web))
 
     # Create a layout and add widgets
-    #layout = QGridLayout()
+    layout = QGridLayout()
+    layout.addWidget(user_input, 0, 0)
     layout.addWidget(web, 1, 0)
-    #layout.addWidget(text_input, 1, 0)
-    #layout.addWidget(button, 1, 1)
-    #layout.addWidget(label, 0, 0)
+    layout.addWidget(user_info, 1, 1)
+    layout.addWidget(calculation_input, 0, 1)
 
     # Create a central widget and set the layout
     central_widget = QWidget()

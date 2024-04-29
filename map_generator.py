@@ -36,8 +36,7 @@ class Map:
         self.points = [[5621990, 636646, 0], [5616452, 636456, 0], [5618652, 640156, 0], [5619990, 636346, 200]]
         self.plot_point()
 
-        self.fig.add_trace(go.Scatter3d(x=[5618222], y=[637900], z=[180], name='Node', mode='markers',
-                                   marker=dict(symbol='cross', size=5, color='yellow'), showlegend=False))
+
 
         # Set the title and axis labels
         self.fig.update_layout(title='Heightmap', scene=dict(xaxis_title='X', yaxis_title='Y', zaxis_title='Height'))
@@ -49,6 +48,9 @@ class Map:
         # Update the map window with the new plot
         with open('terrain_map.html', 'w') as file:
             file.write(html_string)
+
+        self.update([['5621990', '636646', '0'], ['5616452', '636456', '0'], ['5618652', '640156', '0'],
+            ['5619990', '636346', '200'], ['5618222', '637900', '180']])
 
     def update(self, points):
         new_data = list(self.fig.data)
@@ -62,14 +64,20 @@ class Map:
         z = []
 
         for point in points:
-            x.append(point[0])
-            y.append(point[1])
-            z.append(point[2])
+            x_tmp = point[0]
+            y_tmp = point[1]
+            x.append(x_tmp)
+            y.append(y_tmp)
+            mapped_x = round(self.map_value(int(x_tmp), 5609803, 5623932, 0, self.imarray.shape[1]))
+            mapped_y = round(self.map_value(int(y_tmp), 632621, 641086, 0, self.imarray.shape[0]))
+            z.append(self.imarray[mapped_y][mapped_x] + int(point[2]))
 
-
+        mapped_ms_x = round(self.map_value(int(ms[0]), 5609803, 5623932, 0, self.imarray.shape[1]))
+        mapped_ms_y = round(self.map_value(int(ms[1]), 632621, 641086, 0, self.imarray.shape[0]))
+        ms_s = self.imarray[mapped_ms_y][mapped_ms_x] + int(ms[2])
         self.fig.data = new_data
         self.fig.add_trace(go.Scatter3d(x=x, y=y, z=z, name='Basestations', mode='markers', marker=dict(symbol='square-open', size=5, color='red'), showlegend=False))
-        self.fig.add_trace(go.Scatter3d(x=[ms[0]], y=[ms[1]], z=[ms[2]], name='Node', mode='markers', marker=dict(symbol='cross', size=5, color='yellow'), showlegend=False))
+        self.fig.add_trace(go.Scatter3d(x=[ms[0]], y=[ms[1]], z=[ms_s], name='Node', mode='markers', marker=dict(symbol='cross', size=5, color='yellow'), showlegend=False))
         # Generate the HTML string of the figure
         html_string = pyo.plot(self.fig, include_plotlyjs='cdn', output_type='div')
 
@@ -87,14 +95,15 @@ class Map:
             y = point[1]
             points_x.append(x)
             points_y.append(y)
+            mapped_x = round(self.map_value(x, 5609803, 5623932, 0, self.imarray.shape[1]))
+            mapped_y = round(self.map_value(y, 632621, 641086, 0, self.imarray.shape[0]))
+            points_z.append(self.imarray[mapped_y][mapped_x] + point[2])
 
-            if point[2] == 0:
-                mapped_x = round(self.map_value(x, 5609803, 5623932, 0, self.imarray.shape[1]))
-                mapped_y = round(self.map_value(y, 632621, 641086, 0, self.imarray.shape[0]))
-                points_z.append(self.imarray[mapped_y][mapped_x] + 10)
-            else:
-                points_z.append(point[2])
-
+        mapped_ms_x = round(self.map_value(5618222, 5609803, 5623932, 0, self.imarray.shape[1]))
+        mapped_ms_y = round(self.map_value(637900, 632621, 641086, 0, self.imarray.shape[0]))
+        ms_s = self.imarray[mapped_ms_y][mapped_ms_x] + 180
+        self.fig.add_trace(go.Scatter3d(x=[5618222], y=[637900], z=[ms_s], name='Node', mode='markers',
+                                        marker=dict(symbol='cross', size=5, color='yellow'), showlegend=False))
         self.fig.add_trace(go.Scatter3d(x=points_x, y=points_y, z=points_z, name='Basestations', mode='markers',
                                    marker=dict(symbol='square-open', size=5, color='red'), showlegend=False))
 
